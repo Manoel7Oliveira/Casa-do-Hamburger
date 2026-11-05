@@ -1,13 +1,15 @@
 import { useState } from "react";
 import Input from "../components/Input";
-
 import { Link } from "react-router";
 import Button from "../components/Button";
+import { useNavigate } from "react-router";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  const navigate = useNavigate();
 
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -24,18 +26,30 @@ const Login = () => {
       });
 
       console.log(response);
-
-      if (response.status === 400) {
-        setError("Usuário e senha são obrigatórias");
+      if (response.status === 500) {
+        setError("Erro no servidor, tente novamente mais tarde");
+        return;
       }
 
       if (response.status === 404) {
         setError("Usuário não encontrado");
+        return;
+      }
+
+      if (response.status === 401) {
+        setError("Credenciais inválidas");
+        return;
+      }
+
+      if (response.status === 400) {
+        setError("Usuário e senha são obrigatórias");
+        return;
       }
 
       if (response.status === 200) {
-        const data = await response.json();
-        console.log(data);
+        setError("");
+        await response.json();
+        navigate("/");
       }
     } catch (error) {
       console.error("Erro ao fazer login:", error);
