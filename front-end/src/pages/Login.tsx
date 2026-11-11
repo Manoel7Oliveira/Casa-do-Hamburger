@@ -3,11 +3,16 @@ import Input from "../components/Input";
 import { Link } from "react-router";
 import Button from "../components/Button";
 import { useNavigate } from "react-router";
+import { useContext } from "react";
+import { UserContext } from "../contexts/UserContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  const { setUser } = useContext(UserContext);
+  console.log(document.cookie);
 
   const navigate = useNavigate();
 
@@ -23,6 +28,7 @@ const Login = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include", // Inclui cookies na requisição
       });
 
       console.log(response);
@@ -48,8 +54,9 @@ const Login = () => {
 
       if (response.status === 200) {
         setError("");
-        await response.json();
+        const data = await response.json();
         navigate("/");
+        setUser(data);
       }
     } catch (error) {
       console.error("Erro ao fazer login:", error);
