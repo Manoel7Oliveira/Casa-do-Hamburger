@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { prisma } from "../db.js";
+import jwt from "jsonwebtoken";
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -25,12 +26,21 @@ export const login = async (req: Request, res: Response) => {
     if (!match) {
       res.status(401).json({ message: "Usuário não encontrado" });
     }
-    res.status(200).json({
+
+    const userInfos = {
       id: user.id,
       name: user.name,
       email: user.email,
       cep: user.cep,
+    };
+
+    const token = jwt.sign(userInfos, process.env.JWT_SECRET!);
+
+    res.cookie("user", token, {
+      maxAge: 18000000, // Igual a 5 hr, em milissegundos
     });
+
+    res.status(200).json(userInfos);
   } catch (err) {
     res.status(500).json({ error: err });
     return;
@@ -70,4 +80,32 @@ export const register = async (req: Request, res: Response) => {
   } catch (err) {
     res.status(500).json({ message: err });
   }
+};
+
+export const auth = async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies.user;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+
+    if (!decoded) {
+      res.status(401).json({ message: "Usuário nao autorizado" });
+    }
+
+    res.status(200).json(decoded);
+  } catch (err) {
+    res.status(500).json({ message: err });
+    return;
+  }
+};
+
+export const logout = async (req: Request, res: Response) => {
+  const { user } = req.cookies;
+
+  if (user) {
+    res.clearCookie("user");
+    res.json({ message: "Usuário deslogado" });
+  }
+
+  console.log(user);
 };
